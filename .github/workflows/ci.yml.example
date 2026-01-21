@@ -1,0 +1,60 @@
+name: Build and Deploy to EC2 via SSM (Example)
+
+# NOTE:
+# This workflow is intentionally provided in a disabled/example form.
+# It demonstrates the full CI/CD logic without executing against real AWS resources.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy (Example)
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: <AWS_REGION>
+      ECR_REPOSITORY: <ECR_REPOSITORY_NAME>
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Authenticate to AWS using OIDC (no static credentials)
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<GITHUB_ACTIONS_IAM_ROLE>
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build and push Docker image to ECR
+      - name: Build and push Docker image
+        run: |
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      # Deploy image to EC2 using AWS Systems Manager (SSM)
+      - name: Deploy to EC2 via SSM
+        run: |
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=<EC2_NAME_TAG>" \
+            --parameters 'commands=[
+              "docker pull '"$IMAGE_URI"'",
+              "docker stop <CONTAINER_NAME> || true",
+              "docker rm <CONTAINER_NAME> || true",
+              "docker run -d --name <CONTAINER_NAME> -p 8000:8000 '"$IMAGE_URI"'"
+            ]' \
+            --region ${{ env.AWS_REGION }}
