@@ -238,28 +238,40 @@ At that point, migration to a load-balanced or Kubernetes-based runtime becomes 
 ### 🧠 Key Terraform & AWS Lessons Learned
 
 **This project surfaced several real-world infrastructure and cloud platform insights:**
+
  -- Infrastructure state matters more than configuration files Terraform behavior is governed by state, not intent. Drift between AWS resources and Terraform state leads to unexpected outcomes if not managed carefully.
+
  -- IAM permissions ≠ runtime authentication Granting an EC2 instance permission to access ECR does not automatically authenticate Docker. Explicit ECR login is required at runtime.
+
  -- CI roles and runtime roles are separate trust domains GitHub Actions IAM permissions are completely independent of EC2 instance permissions. Each role must be scoped and reasoned about separately.
+
  -- User data execution is not idempotent EC2 user data runs only at instance creation unless explicitly configured otherwise (user_data_replace_on_change).
+
  -- Asynchronous systems require explicit verification AWS SSM command execution is asynchronous. Success must be verified through invocation status and output, not assumed.
+
 **These lessons influenced the final architecture and deployment flow.**
 
 ### Operator Ownership Statement
+
 **This system was designed, built, deployed, debugged, and operated by a single engineer.**
+
 I take full responsibility for:
-    • Deployment safety
-    • IAM boundary correctness
-    • Runtime recoverability
-    • Security posture of the CI/CD pipeline
+   -  Deployment safety
+   -  IAM boundary correctness
+   -  Runtime recoverability
+   -  Security posture of the CI/CD pipeline
+
 I explicitly acknowledge that:
-    • This system trades availability for cost and clarity
-    • Failures impact 100% of traffic
-    • Recovery requires deliberate human action
+   -  This system trades availability for cost and clarity
+   -  Failures impact 100% of traffic
+   -  Recovery requires deliberate human action
+
 I consider these trade-offs acceptable for the defined scope and constraints.
+
 I would not expand this system’s blast radius without first introducing:
-    • Redundancy
-    • Health-gated deployments
-    • Automated rollback mechanisms
+   -  Redundancy
+   -  Health-gated deployments
+   -  Automated rollback mechanisms
+
 Until then, this system remains intentionally constrained and human-operated.
 
