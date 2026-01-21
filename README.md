@@ -22,6 +22,8 @@ The focus of this project is not on tools alone, but on operational correctness,
  - Infrastructure provisioning is handled separately via Terraform.
 
 flowchart LR Dev[Developer git push]
+
+```
 Repo[GitHub Repository]
 CI[GitHub Actions<br/>CI/CD Pipeline]
 
@@ -47,6 +49,7 @@ EC2 -->|docker run| App
 
 TF -->|Provision infrastructure| IAM
 TF -->|Provision infrastructure| EC2
+```
 
 ### Why This Architecture
 
@@ -57,9 +60,9 @@ TF -->|Provision infrastructure| EC2
 - These choices prioritize security, clarity, and operational maturity.
 
 ### Repository Structure . 
-
+```
 ├── app/ # FastAPI application and Dockerfile ├── terraform/ # Terraform infrastructure definitions ├── scripts/ # Operational SSM command references ├── docs/ # Architecture decisions and learning notes ├── diagrams/ # Architecture diagrams └── .github/ # CI/CD workflow examples (disabled)
-
+```
 ### CI/CD Workflow (Example)
 
  - This repository includes a sanitized, disabled example of the GitHub Actions workflow used for  deployment.
@@ -144,9 +147,14 @@ TF -->|Provision infrastructure| EC2
 This system intentionally operates with a single EC2 instance and no load balancer. As a result, any failed deployment or instance-level failure impacts 100% of traffic. There is no automated failover.
 Recovery is performed manually by redeploying a previously known-good image from Amazon ECR via AWS Systems Manager. This trade-off was accepted to minimize cost and complexity while preserving clear, auditable recovery paths.
 
+**Failure Impact Quantification**
+
+This system operates with a single EC2 instance and no load balancer. As a result, any failed deployment or instance-level failure impacts **100% of traffic immediately**. There is no partial degradation mode. Recovery time is bounded by human intervention and ECR image availability, typically on the order of minutes rather than seconds.
+
 **Operational Invariants**
 
-**The following invariants must always hold true for this system to function correctly. Violating these assumptions will result in undefined behavior or service disruption.**
+**These invariants represent non-negotiable system contracts. Violating any of them invalidates the architecture and requires redesign rather than patching.**
+
  - The EC2 instance must always have an IAM instance profile attached
  - The application cannot pull images or be managed without IAM-based access.
  - Docker must be installed and running before any deployment commands execute.
@@ -207,6 +215,16 @@ Recovery is performed manually by redeploying a previously known-good image from
  - Introducing a load balancer and multiple instances or
  - Migrating the runtime to Kubernetes
  - Incremental patches to the current architecture are not recommended for these use cases.
+
+**Replacement Triggers**
+
+This architecture should be replaced—not extended—if any of the following become requirements:
+       - More than one production deployment per day
+       - Non-zero downtime requirements
+       - Multi-tenant or external customer traffic
+       - SLA-backed availability targets
+       - Automated rollback expectations
+At that point, migration to a load-balanced or Kubernetes-based runtime becomes the correct solution.
  
 ### Human Factors & Operational Reality
 
