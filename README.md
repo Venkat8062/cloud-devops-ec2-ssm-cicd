@@ -207,6 +207,15 @@ Basic observability: Logging and monitoring are limited to container output and 
 
 These limitations are documented intentionally and reflect conscious design choices rather than omissions.
 
+### Failure Impact & Recovery
+
+This system intentionally operates with a single EC2 instance and no load balancer.
+As a result, any failed deployment or instance-level failure impacts 100% of traffic.
+There is no automated failover.
+
+Recovery is performed manually by redeploying a previously known-good image from Amazon ECR via AWS Systems Manager.
+This trade-off was accepted to minimize cost and complexity while preserving clear, auditable recovery paths.
+
 🧠 Key Terraform & AWS Lessons Learned
 
 This project surfaced several real-world infrastructure and cloud platform insights:
