@@ -35,7 +35,35 @@ EC2 runs the containerized application
 
 Infrastructure provisioning is handled separately via Terraform.
 
-(See /diagrams for architecture visuals.)
+flowchart LR
+    Dev[Developer<br/>git push]
+
+    Repo[GitHub Repository]
+    CI[GitHub Actions<br/>CI/CD Pipeline]
+
+    IAM[AWS IAM<br/>OIDC Trust]
+    ECR[Amazon ECR<br/>Container Registry]
+    SSM[AWS Systems Manager<br/>SSM]
+
+    EC2[EC2 Instance<br/>IAM Instance Profile]
+    App[FastAPI Container<br/>Port 8000<br/>/health]
+
+    TF[Terraform<br/>Infrastructure as Code]
+
+    Dev -->|Code push| Repo
+    Repo -->|Trigger on push| CI
+
+    CI -->|OIDC AssumeRole<br/>(No static credentials)| IAM
+    CI -->|Push Docker image| ECR
+    CI -->|Send deployment commands| SSM
+
+    EC2 -->|Pull image| ECR
+    SSM -->|Run shell commands<br/>(No SSH)| EC2
+    EC2 -->|docker run| App
+
+    TF -->|Provision infrastructure| IAM
+    TF -->|Provision infrastructure| EC2
+
 
 Why This Architecture
 
@@ -143,3 +171,7 @@ Container lifecycle checks after deployment (pull, stop, remove, run)
 Manual and scripted validation via SSM-executed commands on the EC2 instance
 
 This ensures that CI/CD success reflects actual runtime correctness, not just pipeline completion.
+
+
+
+
