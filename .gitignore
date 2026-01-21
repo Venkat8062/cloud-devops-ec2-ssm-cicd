@@ -1,0 +1,15 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Python
+__pycache__/
+*.pyc
+
+# Docker
+.env
+
+# OS
+.DS_Store
