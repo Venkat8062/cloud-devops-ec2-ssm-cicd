@@ -216,6 +216,117 @@ There is no automated failover.
 Recovery is performed manually by redeploying a previously known-good image from Amazon ECR via AWS Systems Manager.
 This trade-off was accepted to minimize cost and complexity while preserving clear, auditable recovery paths.
 
+Operational Invariants
+
+The following invariants must always hold true for this system to function correctly.
+Violating these assumptions will result in undefined behavior or service disruption.
+
+The EC2 instance must always have an IAM instance profile attached
+
+The application cannot pull images or be managed without IAM-based access.
+
+Docker must be installed and running before any deployment commands execute.
+
+Application deployments must not be performed via Terraform
+
+Terraform manages infrastructure lifecycle only.
+
+CI/CD must authenticate via OIDC
+
+Static credentials or long-lived access keys are explicitly unsupported.
+
+Only one EC2 instance is supported by this architecture.
+
+Scaling assumptions are intentionally constrained (see limitations).
+
+
+Operator Responsibilities & Guardrails
+
+This system assumes a single responsible operator.
+
+The operator is expected to:
+
+Use CI/CD pipelines for application updates.
+
+Use Terraform only for infrastructure changes.
+
+Validate deployments explicitly via:
+
+Application health endpoints
+
+Runtime container state checks
+
+Perform rollbacks by redeploying a known-good image from ECR.
+
+The operator must not:
+
+SSH into the EC2 instance.
+
+Manually edit runtime configuration on the host.
+
+Run ad-hoc Docker commands outside of documented deployment flows.
+
+Modify IAM policies without understanding downstream impact.
+
+These guardrails exist to preserve reproducibility, security, and debuggability.
+
+Failure Impact & Recovery
+
+This architecture intentionally uses a single EC2 instance.
+
+Failure impact:
+
+A failed deployment impacts 100% of traffic.
+
+Instance failure results in full service outage until recovery.
+
+There is no automatic traffic shifting or redundancy.
+
+Recovery strategy:
+
+Roll back by redeploying a previous image from ECR.
+
+Restart the container via SSM-executed commands.
+
+Recreate infrastructure via Terraform if required.
+
+These trade-offs are accepted intentionally to prioritize cost control, simplicity, and clarity.
+
+Explicit Non-Goals & Future Direction
+
+This project intentionally does not attempt to solve:
+
+High availability
+
+Horizontal scaling
+
+Automatic traffic shifting
+
+Zero-downtime deployments on EC2
+
+If these requirements emerge, the correct next steps would include:
+
+Introducing a load balancer and multiple instances or
+
+Migrating the runtime to Kubernetes
+
+Incremental patches to the current architecture are not recommended for these use cases.
+
+
+Human Factors & Operational Reality
+
+Most failures encountered during this project occurred not due to tooling defects, but due to:
+
+Misaligned assumptions between systems
+
+Authentication vs authorization misunderstandings
+
+Asynchronous execution expectations
+
+Human interpretation errors
+
+This project treats operational clarity as a first-class concern, equal to correctness and security.
+
 🧠 Key Terraform & AWS Lessons Learned
 
 This project surfaced several real-world infrastructure and cloud platform insights:
