@@ -19,7 +19,6 @@ locals {
   EOF
 }
 
-
 # ------------------------
 # VPC
 # ------------------------
@@ -50,7 +49,7 @@ resource "aws_internet_gateway" "this" {
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.this.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.aws_region}a"
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
@@ -91,7 +90,7 @@ resource "aws_security_group" "app" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description = "HTTP access"
+    description = "HTTP access (intentionally open for demo purposes)"
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
@@ -136,9 +135,6 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-
-#ECR Read-Only Policy
-
 resource "aws_iam_role_policy_attachment" "ecr_read" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
@@ -149,19 +145,18 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-
 # ------------------------
 # EC2 Instance
 # ------------------------
 resource "aws_instance" "app" {
-  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2 (us-east-1)
-  instance_type          = "t3.micro"
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
-  user_data = base64encode(local.user_data)
-  user_data_replace_on_change = true  
+  user_data                    = base64encode(local.user_data)
+  user_data_replace_on_change  = true
 
   tags = {
     Name = "${var.project_name}-ec2"
@@ -169,5 +164,6 @@ resource "aws_instance" "app" {
 }
 
 output "ec2_public_ip" {
-  value = aws_instance.app.public_ip
- }
+  description = "Public IP of the EC2 instance"
+  value       = aws_instance.app.public_ip
+}
