@@ -123,24 +123,36 @@ TF -->|Provision infrastructure| EC2
 **🚫 Why Kubernetes Is Not Used Here**
 
  **- This project intentionally does not use Kubernetes for the runtime layer.**
+ 
  **- Kubernetes was evaluated and used separately to validate reliability concepts such as readiness probes, rolling updates, and canary deployments. However, for this project, EC2 + Docker was selected as the runtime for the following reasons:**
-**Cost efficiency:** Managed Kubernetes (EKS) introduces ongoing control-plane costs that are unnecessary for a single-service deployment.
-**Architectural clarity:** This project focuses on CI/CD security, IAM boundaries, and deployment mechanics rather than container orchestration complexity.
-**Operational realism:** Many production systems—especially internal tools and early-stage services—run successfully on EC2 with containerized workloads and automated deployment pipelines.
-**Separation of concerns:** Kubernetes-specific reliability mechanisms were validated independently to avoid conflating orchestration learning with CI/CD and IAM design.
-**The absence of Kubernetes here is a deliberate architectural decision, not a knowledge gap.**
+
+ **Cost efficiency:** Managed Kubernetes (EKS) introduces ongoing control-plane costs that are unnecessary for a single-service deployment.
+ 
+ **Architectural clarity:** This project focuses on CI/CD security, IAM boundaries, and deployment mechanics rather than container orchestration complexity.
+
+ **Operational realism:** Many production systems—especially internal tools and early-stage services—run successfully on EC2 with containerized workloads and automated deployment pipelines.
+
+ **Separation of concerns:** Kubernetes-specific reliability mechanisms were validated independently to avoid conflating orchestration learning with CI/CD and IAM design.
+
+ **The absence of Kubernetes here is a deliberate architectural decision, not a knowledge gap.**
 
 ### Known Limitations & Trade-offs
 
 - This architecture intentionally accepts certain limitations in exchange for simplicity, cost control, and clarity.
 
 **Key trade-offs include:**
+
  **- No automated health-gated deployments:** Unlike Kubernetes probes, deployment success is validated manually or via scripted checks.
+
  **- Manual rollback:** Rollbacks require redeploying a previous image from ECR rather than automatic traffic shifting.
+
  **-Single-instance runtime:** The EC2 instance represents a single failure domain and does not provide horizontal scaling.
+
  **-No load balancer:** The application is exposed directly via EC2 for demonstration purposes.
+
  **-Basic observability:** Logging and monitoring are limited to container output and AWS-native tooling.
-**These limitations are documented intentionally and reflect conscious design choices rather than omissions.**
+
+ **These limitations are documented intentionally and reflect conscious design choices rather than omissions.**
 
 ### Failure Impact & Recovery
 
@@ -219,12 +231,14 @@ This system operates with a single EC2 instance and no load balancer. As a resul
 **Replacement Triggers**
 
 This architecture should be replaced—not extended—if any of the following become requirements:
-       - More than one production deployment per day
-       - Non-zero downtime requirements
-       - Multi-tenant or external customer traffic
-       - SLA-backed availability targets
-       - Automated rollback expectations
-At that point, migration to a load-balanced or Kubernetes-based runtime becomes the correct solution.
+ 
+ - More than one production deployment per day
+ - Non-zero downtime requirements
+ - Multi-tenant or external customer traffic
+ - SLA-backed availability targets
+ - Automated rollback expectations
+
+**At that point, migration to a load-balanced or Kubernetes-based runtime becomes the correct solution.**
  
 ### Human Factors & Operational Reality
 
