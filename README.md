@@ -173,5 +173,58 @@ Manual and scripted validation via SSM-executed commands on the EC2 instance
 This ensures that CI/CD success reflects actual runtime correctness, not just pipeline completion.
 
 
+🚫 Why Kubernetes Is Not Used Here
 
+This project intentionally does not use Kubernetes for the runtime layer.
+
+Kubernetes was evaluated and used separately to validate reliability concepts such as readiness probes, rolling updates, and canary deployments. However, for this project, EC2 + Docker was selected as the runtime for the following reasons:
+
+Cost efficiency: Managed Kubernetes (EKS) introduces ongoing control-plane costs that are unnecessary for a single-service deployment.
+
+Architectural clarity: This project focuses on CI/CD security, IAM boundaries, and deployment mechanics rather than container orchestration complexity.
+
+Operational realism: Many production systems—especially internal tools and early-stage services—run successfully on EC2 with containerized workloads and automated deployment pipelines.
+
+Separation of concerns: Kubernetes-specific reliability mechanisms were validated independently to avoid conflating orchestration learning with CI/CD and IAM design.
+
+The absence of Kubernetes here is a deliberate architectural decision, not a knowledge gap.
+
+⚠️ Known Limitations & Trade-offs
+
+This architecture intentionally accepts certain limitations in exchange for simplicity, cost control, and clarity.
+
+Key trade-offs include:
+
+No automated health-gated deployments: Unlike Kubernetes probes, deployment success is validated manually or via scripted checks.
+
+Manual rollback: Rollbacks require redeploying a previous image from ECR rather than automatic traffic shifting.
+
+Single-instance runtime: The EC2 instance represents a single failure domain and does not provide horizontal scaling.
+
+No load balancer: The application is exposed directly via EC2 for demonstration purposes.
+
+Basic observability: Logging and monitoring are limited to container output and AWS-native tooling.
+
+These limitations are documented intentionally and reflect conscious design choices rather than omissions.
+
+🧠 Key Terraform & AWS Lessons Learned
+
+This project surfaced several real-world infrastructure and cloud platform insights:
+
+Infrastructure state matters more than configuration files
+Terraform behavior is governed by state, not intent. Drift between AWS resources and Terraform state leads to unexpected outcomes if not managed carefully.
+
+IAM permissions ≠ runtime authentication
+Granting an EC2 instance permission to access ECR does not automatically authenticate Docker. Explicit ECR login is required at runtime.
+
+CI roles and runtime roles are separate trust domains
+GitHub Actions IAM permissions are completely independent of EC2 instance permissions. Each role must be scoped and reasoned about separately.
+
+User data execution is not idempotent
+EC2 user data runs only at instance creation unless explicitly configured otherwise (user_data_replace_on_change).
+
+Asynchronous systems require explicit verification
+AWS SSM command execution is asynchronous. Success must be verified through invocation status and output, not assumed.
+
+These lessons influenced the final architecture and deployment flow.
 
